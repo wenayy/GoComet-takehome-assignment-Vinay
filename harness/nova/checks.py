@@ -80,9 +80,12 @@ def pickup_of(world: World, awb: str | None, line: Line | None) -> tuple[date | 
 
 
 def is_pickup(event) -> bool:
-    """PICKED_UP, 'Picked up', COLLECTED_FROM_SHIPPER ... but never a consignee collecting the goods at the end."""
+    """PICKED_UP, 'Picked up', COLLECTED_FROM_SHIPPER, TENDERED, RECEIVED_FROM_SHIPPER ... but never an event at the
+    consignee's end (COLLECTED_BY_CONSIGNEE, RECEIVED_BY_CONSIGNEE)."""
     e = str(event or "").upper().replace(" ", "_")
-    return "PICK" in e or ("COLLECT" in e and "CONSIGNEE" not in e)
+    if "CONSIGNEE" in e:
+        return False
+    return "PICK" in e or "COLLECT" in e or "TENDER" in e or ("RECEIVED" in e and "SHIPPER" in e)
 
 
 def chargeable_kg(world: World, awb: str | None, billed) -> tuple[Decimal | None, Cite | None]:

@@ -71,7 +71,15 @@ committing it before moving on.
 
 ## Written without AI
 
+ 
+I told Claude what to build and test next, based on the brief: an eval for every edge case it lists, written the evals,(unauthorised and forwarded waivers, credits in full, in part, for another charge and in a later batch, one shipment only, other wordings, an email telling the AI to ignore the contract), a self-check that invoice lines add up to the printed total, and a full hand-check of the exam sheet.
 
+I questioned results instead of accepting them: the cost of a model run,whether the code assumed one invoice layout, and whether it would hold up on unseen data.
+
+ _price_shipment() in checks.py: "what should this invoice have cost?", It recalculates each charge line of a shipment
+
+  choose_actions() in report.py, supervised mode or autonomous mode 
+ 
 ## Prompt log
 
  1. llm dont do the final findings? the sequence of things right ocr, harness and then persistent storage is that
@@ -148,3 +156,9 @@ committing it before moving on.
     *Written by Claude Code at my request (not by me): `month_of()` now also reads months printed as `Dec-2034`, and a
     decoy eval, `screening_correctly_billed_no_overcharge`, checks that a correctly billed screening charge next to a
     waived, partly credited fee is not flagged as an overcharge. 26 of 26 evals pass.*
+
+13. > make the whole code btter then if somethigns are missing then
+
+    *Written by Claude Code at my request: amounts printed in accounting style, `(1,234.50)`, now read as negative;
+    year-first dates (`2035/07/18`) are parsed; pickup events named `TENDERED` or `RECEIVED_FROM_SHIPPER` count as
+    pickups, while consignee-side events never do. Practice 99.6, exam sheet unchanged, 26 of 26 evals.*

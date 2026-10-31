@@ -13,20 +13,24 @@ _NUM = re.compile(r"-?\d+(?:\.\d+)?")
 
 
 def D(x) -> Decimal | None:
-    """A number however a model wrote it: 23.54, "23.54", "23.54%", "USD 1,234.50", "INR 90,535.08"."""
+    """A number however a model wrote it: 23.54, "23.54%", "USD 1,234.50", "(1,234.50)" (negative)."""
     if x is None or x == "" or isinstance(x, bool):
         return None
     if isinstance(x, Decimal):
         return x
     if isinstance(x, (int, float)):
         return Decimal(str(x))
-    m = _NUM.search(str(x).replace(",", ""))
+    text = str(x).replace(",", "")
+    m = _NUM.search(text)
     if not m:
         return None
     try:
-        return Decimal(m.group(0))
+        value = Decimal(m.group(0))
     except InvalidOperation:
         return None
+    # accounting style: (1,234.50) is a negative amount, as credit notes often print it
+    wrapped = re.search(r"\(\s*(?:[A-Z]{3}|\$)?\s*" + re.escape(m.group(0).lstrip("-")) + r"\s*\)", text)
+    return -abs(value) if wrapped else value
 
 
 def r2(x) -> Decimal:
