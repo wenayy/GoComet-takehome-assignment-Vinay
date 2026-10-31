@@ -41,17 +41,18 @@ def call_tool(store: Store, *, system: str, content: list | str, tool_name: str,
     hit = store.cache_get(key)
     if hit is not None:
         return hit
+    import anthropic
     client = _client()
     messages = [{"role": "user", "content": content}]
     last = None
     for attempt in range(3):
         try:
             resp = client.messages.create(
-                model=model, max_tokens=max_tokens, temperature=0, system=system, messages=messages,
+                model=model, max_tokens=max_tokens, system=system, messages=messages,
                 tools=[{"name": tool_name, "description": "Record the result.", "input_schema": schema}],
                 tool_choice={"type": "tool", "name": tool_name})
-        except Exception as e:  # network or overload: back off and retry
-            last = e
+        except (anthropic.APIConnectionError, anthropic.RateLimitError, anthropic.InternalServerError) as e:
+            last = e  # transient: back off and retry
             time.sleep(2 * (attempt + 1))
             continue
         for block in resp.content:
