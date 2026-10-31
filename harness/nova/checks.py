@@ -138,6 +138,25 @@ def events_of(world: World, awb: str, *names) -> list[dict]:
     return [e for e in world.events.get(norm_awb(awb), []) if str(e["event"]).upper() in names and e.get("date")]
 
 
+_MONTHS = {m: i for i, m in enumerate(("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov",
+                                        "dec"), 1)}
+
+
+def month_of(text) -> str | None:
+    """A service month however it's printed: 2034-11, 11/2034, Nov 2034, November 2034 -> '2034-11'."""
+    t = str(text or "").strip().lower()
+    m = re.search(r"(\d{4})-(\d{1,2})\b", t) or None
+    if m:
+        return f"{m.group(1)}-{int(m.group(2)):02d}"
+    m = re.search(r"\b(\d{1,2})/(\d{4})\b", t)
+    if m:
+        return f"{m.group(2)}-{int(m.group(1)):02d}"
+    m = re.search(r"\b([a-z]{3})[a-z]*\.?\s+(\d{4})\b", t)
+    if m and m.group(1) in _MONTHS:
+        return f"{m.group(2)}-{_MONTHS[m.group(1)]:02d}"
+    return None
+
+
 def find_line(world: World, ref: str, needle: str) -> Cite | None:
     """The first line of a document that contains `needle`: a citation when the extractor gave none."""
     doc = world.docs.get(ref)
@@ -461,9 +480,9 @@ def _line_key(inv: Invoice, ln: Line) -> tuple | None:
         return None
     if ln.awb:
         return ("awb", inv.contract, ln.awb, ln.code)
-    ref = str(ln.reference or "").strip()
-    if inv.kind == "statement" and re.match(r"\d{4}-\d{2}", ref):
-        return ("month", inv.contract, ref[:7], ln.code)
+    month = month_of(ln.reference)
+    if inv.kind == "statement" and month:
+        return ("month", inv.contract, month, ln.code)
     return None
 
 
@@ -604,9 +623,9 @@ def _condition_met(world: World, w: dict) -> bool:
 def _line_month(inv: Invoice, ln: Line) -> str | None:
     if ln.pickup:
         return ln.pickup.strftime("%Y-%m")
-    ref = str(ln.reference or "")
-    if re.match(r"\d{4}-\d{2}", ref):
-        return ref[:7]
+    month = month_of(ln.reference)
+    if month:
+        return month
     return inv.date.strftime("%Y-%m") if inv.date else None
 
 
@@ -655,11 +674,13 @@ def _due_of(world: World, k: Contract, iid: str) -> tuple[date | None, list]:
     return due, cites
 
 
-def _referenced_invoice(ln: Line) -> str | None:
-    for text in (ln.reference, ln.description):
-        m = re.search(r"([A-Z]{2,}[A-Z0-9]*(?:[-/][A-Z0-9]+){1,})", str(text or "").upper())
-        if m:
-            return norm_id(m.group(1))
+def _referenced_invoice(world: World, ln: Line) -> str | None:
+    """The invoice a late-fee line is charged on: any invoice number we hold that the line mentions, whatever the
+    carrier's numbering looks like. Longest match first, so 'X-10' never wins over 'X-101'."""
+    text = norm_id(" ".join(str(t or "") for t in (ln.reference, ln.description, ln.cite.quote)))
+    for iid in sorted(set(world.invoices) | set(world.payments), key=len, reverse=True):
+        if iid and iid != ln.invoice and iid in text:
+            return iid
     return None
 
 
@@ -692,7 +713,7 @@ def check_late_fees(world: World) -> list[Item]:
             continue
         native, cites = ZERO, []
         for ln in late:
-            ref = _referenced_invoice(ln)
+            ref = _referenced_invoice(world, ln)
             if not ref or ref == iid:
                 continue
             p = world.payments.get(ref)
