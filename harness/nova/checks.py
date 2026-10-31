@@ -69,7 +69,7 @@ def pickup_of(world: World, awb: str | None, line: Line | None) -> tuple[date | 
         evs = world.events.get(norm_awb(awb), []) + (world.events.get(base, []) if base != norm_awb(awb) else [])
         for kind in STRONG_PICKUP:
             for e in evs:
-                if e["_kind"] == kind and str(e["event"]).upper() in ("PICKED_UP", "PICKUP", "COLLECTED") and e.get("date"):
+                if e["_kind"] == kind and is_pickup(e["event"]) and e.get("date"):
                     return to_date(e["date"]), kind, cite(e["_ref"], e)
         for s in world.shipments.get(norm_awb(awb), []) + world.shipments.get(base, []):
             if s.get("_kind") == "air_waybill" and s.get("date"):
@@ -77,6 +77,12 @@ def pickup_of(world: World, awb: str | None, line: Line | None) -> tuple[date | 
     if line and line.pickup:
         return line.pickup, "invoice", line.cite
     return None, "", None
+
+
+def is_pickup(event) -> bool:
+    """PICKED_UP, 'Picked up', COLLECTED_FROM_SHIPPER ... but never a consignee collecting the goods at the end."""
+    e = str(event or "").upper().replace(" ", "_")
+    return "PICK" in e or ("COLLECT" in e and "CONSIGNEE" not in e)
 
 
 def chargeable_kg(world: World, awb: str | None, billed) -> tuple[Decimal | None, Cite | None]:
@@ -519,17 +525,26 @@ def check_waivers(world: World) -> list[Item]:
         if k is None:
             continue
         hit_lines, cites, learned, quoted_only = [], [], None, None
+        one_off = _one_off(world, iid, "waived_but_billed")
         for w in waivers:
-            if w.get("condition"):
-                continue  # clause 11.3: a conditional waiver needs proof its condition was met
+            if not _condition_met(world, w):
+                continue  # a conditional waiver takes effect only once its condition is met
             code = (str(w.get("charge_code") or "").upper() or None)
             code = _charge_code(k, w.get("charge")) or code
             awb = norm_awb(w.get("awb")) if w.get("awb") else None
             months = {str(m)[:7] for m in (w.get("months") or [])}
             lines = [ln for ln in inv.lines if (code is None or ln.code == code) and (
                 (awb and ln.awb == awb) or (months and _line_month(inv, ln) in months))]
-            fb_one_off = _one_off(world, iid, "waived_but_billed")
-            if not lines and fb_one_off is None:
+            if not lines:
+                continue
+            if one_off and _same_person(one_off, w):
+                # a person approved this waiver for this key only, for the months they named
+                months_ok = {str(m)[:7] for m in ((one_off.get("fact") or {}).get("value") or {}).get("months") or []}
+                lines = [ln for ln in lines if not months_ok or _line_month(inv, ln) in months_ok]
+                if lines:
+                    hit_lines += [ln for ln in lines if ln not in hit_lines]
+                    cites.append(cite(w["_ref"], w))
+                    learned = {"feedback_item_id": one_off["item_id"], "batch": one_off.get("_batch")}
                 continue
             if w.get("quoted"):
                 if lines:
@@ -573,6 +588,17 @@ def check_waivers(world: World) -> list[Item]:
     return items
 
 
+def _condition_met(world: World, w: dict) -> bool:
+    kind = w.get("condition_kind") or ("other" if w.get("condition") else "none")
+    if kind == "none":
+        return True
+    if kind == "paid_by_date" and w.get("condition_date") and w.get("condition_invoice"):
+        p = world.payments.get(norm_id(w["condition_invoice"]))
+        paid = to_date((p or ({},))[0].get("paid_date")) if p else None
+        return paid is not None and paid <= to_date(w["condition_date"])
+    return False  # a condition we can't verify: no finding rather than a guess
+
+
 def _line_month(inv: Invoice, ln: Line) -> str | None:
     if ln.pickup:
         return ln.pickup.strftime("%Y-%m")
@@ -580,6 +606,11 @@ def _line_month(inv: Invoice, ln: Line) -> str | None:
     if re.match(r"\d{4}-\d{2}", ref):
         return ref[:7]
     return inv.date.strftime("%Y-%m") if inv.date else None
+
+
+def _same_person(fb: dict, w: dict) -> bool:
+    who = ((fb.get("fact") or {}).get("subject") or {}).get("person")
+    return bool(who) and norm_name(who) in (norm_name(w.get("author_name")), norm_name(w.get("_sender_name")))
 
 
 def _one_off(world: World, iid: str, cls: str) -> dict | None:

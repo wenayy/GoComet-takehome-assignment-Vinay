@@ -1,0 +1,12 @@
+name: expiry exactly 60 days
+mailbox: evals/mailboxes/expiry_exactly_60_days
+as_of: '2042-01-30'
+mode: supervised
+expect:
+  key:
+    contract_id: HAC-BWB-2041
+    class: expiry
+  verdict: finding
+  action: internal:alert
+  deadline: '2042-03-31'
+why: '2042-03-31 minus 2042-01-30 is 60 days: inside the 0-60 window'

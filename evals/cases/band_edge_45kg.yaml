@@ -1,0 +1,13 @@
+name: band edge 45kg
+mailbox: evals/mailboxes/band_edge_45kg
+as_of: '2041-08-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0002
+    class: overcharge
+  verdict: finding
+  amount_usd: '25.99'
+  action: draft:dispute
+why: '45 kg is in 45-99.5: 45 x 5.90 = 265.50 vs billed 288.00 (22.50); fuel 15.5%:
+  44.64 vs 41.15 (3.49)'

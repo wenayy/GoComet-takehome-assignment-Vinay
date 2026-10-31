@@ -1,0 +1,46 @@
+{
+ "schema_version": "1.0",
+ "world": "EV",
+ "after_batch": "batch_01",
+ "decided_at": "2041-06-02T10:00:00Z",
+ "decided_by": {
+  "name": "Callum Iversen-Shah",
+  "role": "Payables Lead",
+  "entity": "BWB-UK"
+ },
+ "items": [
+  {
+   "item_id": "fb-ev-01",
+   "finding_key": {
+    "invoice_id": "HCA-41-0011",
+    "class": "overcharge"
+   },
+   "solicited": false,
+   "decision": "close",
+   "fact": {
+    "type": "rate_accepted",
+    "subject": {
+     "contract_id": "HAC-BWB-2041",
+     "lane": "UKL1-DEF2"
+    },
+    "value": {
+     "source": "rate notice",
+     "sent_by": "Rosalind Achterberg",
+     "sent_on": "2041-05-02",
+     "effective_from": "2041-05-05",
+     "effective_to": "2041-09-30"
+    },
+    "evidence": "Tariffs team confirmed by phone"
+   },
+   "scope": {
+    "kind": "standing",
+    "applies_to": {
+     "contract_id": "HAC-BWB-2041",
+     "lane": "UKL1-DEF2"
+    },
+    "valid_from": "2041-05-05",
+    "valid_to": "2041-09-30"
+   }
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+name: dry ice not hazardous
+mailbox: evals/mailboxes/dry_ice_not_hazardous
+as_of: '2041-08-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0006
+    class: overcharge
+  verdict: finding
+  amount_usd: '140.00'
+  action: draft:dispute
+why: the declaration shows only UN1845 as coolant, so clause 2.7 allows the dry ice
+  fee, not the hazardous fee

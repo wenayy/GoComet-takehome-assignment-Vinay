@@ -1,0 +1,12 @@
+name: feedback accepted rate closes its key
+mailbox: evals/mailboxes/feedback_accepted_rate_closes_its_key
+as_of: '2041-06-30'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0011
+    class: overcharge
+  verdict: no_finding
+why: the person closed this key and accepted the notice for UKL1-DEF2
+feedback:
+  batch_01: evals/feedback/feedback_accepted_rate_closes_its_key_batch_01.json

@@ -1,0 +1,10 @@
+name: expiry 61 days out
+mailbox: evals/mailboxes/expiry_61_days_out
+as_of: '2042-01-29'
+mode: supervised
+expect:
+  key:
+    contract_id: HAC-BWB-2041
+    class: expiry
+  verdict: no_finding
+why: '61 days: outside the window, no alert yet'

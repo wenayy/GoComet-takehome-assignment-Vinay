@@ -1,0 +1,14 @@
+name: late fee risk due in 14 days
+mailbox: evals/mailboxes/late_fee_risk_due_in_14_days
+as_of: '2041-09-17'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0014
+    class: late_fee_risk
+  verdict: finding
+  amount_usd: '8.91'
+  action: internal:payment_reminder
+  deadline: '2041-10-01'
+why: 'due 2041-10-01 is 14 days after as_of: one month''s simple interest 1.50% x
+  594.15 = 8.91'

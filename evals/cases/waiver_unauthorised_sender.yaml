@@ -1,0 +1,11 @@
+name: waiver unauthorised sender
+mailbox: evals/mailboxes/waiver_unauthorised_sender
+as_of: '2041-07-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0004
+    class: waived_but_billed
+  verdict: no_finding
+why: the Account Director is authorised for notices only; Schedule A gives waivers
+  to the Credit Controller

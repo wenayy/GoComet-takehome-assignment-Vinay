@@ -39,6 +39,12 @@ KINDS = ["contract", "amendment", "rate_notice", "invoice", "statement", "credit
 
 CATEGORIES = ["rates", "waivers", "payment_terms", "notices", "billing_disputes", "treasury"]
 
+CHARGE_CATEGORIES = ["freight", "fuel", "security", "peak", "dangerous_goods", "dry_ice", "storage", "delivery",
+                     "customs", "monthly_fee", "carrier_cost", "margin", "special_handling", "duty", "tax", "late_fee",
+                     "other"]
+CATEGORY = {"type": "string", "enum": CHARGE_CATEGORIES,
+            "description": "What the charge is, whatever this contract calls it"}
+
 CONTRACT = obj({
     "contract_id": S,
     "title": SN,
@@ -68,12 +74,12 @@ CONTRACT = obj({
                             "period": SN, "valid_from": SN, "valid_to": SN,
                             "rate": NN, "currency": SN} | QUOTE)},
     "fuel": arr(obj({"month": {"type": "string", "description": "YYYY-MM"}, "pct": NN} | QUOTE)),
-    "accessorials": arr(obj({"code": S, "name": S, "fee": NN, "currency": SN,
+    "accessorials": arr(obj({"code": S, "name": S, "category": CATEGORY, "fee": NN, "currency": SN,
                              "basis": {"type": "string", "enum": ["per_shipment", "per_kg", "per_day", "per_month", "other"]},
                              "months": {"type": ["array", "null"], "items": {"type": "integer"},
                                         "description": "Calendar months (1-12) of pickup when the fee applies, if restricted"}}
                             | QUOTE)),
-    "charge_labels": arr(obj({"code": S, "labels": arr(S)})),
+    "charge_labels": arr(obj({"code": S, "category": CATEGORY, "labels": arr(S)})),
     "fx": arr(obj({"month": {"type": "string", "description": "YYYY-MM"}, "inr_per_usd": NN} | QUOTE)),
     "payment": obj({"net_days": INT, "grace_days": {"type": ["integer", "null"], "description": "Days after the due "
                     "date before a late fee applies (0 if 'more than 0 days')"},
@@ -109,7 +115,9 @@ CONTRACT = obj({
 LINE = obj({
     "awb": {"type": ["string", "null"], "description": "The shipment's own waybill on this line: the house AWB when "
             "one is printed (e.g. 'XX123-H1'), not the master AWB it belongs to"},
-    "pickup_date": SN, "description": S,
+    "pickup_date": {"type": ["string", "null"], "description": "The line's pickup date, whatever the column is "
+                    "called (Pickup, Collected, Ship date, Picked up)"},
+    "description": S,
     "code": {"type": ["string", "null"], "description": "Charge code if you can tell it: FRT, FUEL, SEC, PEAK, DG, "
              "DRYICE, STOR, DLV, CUSTOMS, ACCT, SPROG, PPROG, COST, MARGIN, HDL, DUTY, TAX, LATE, or other"},
     "lane": SN, "qty": NN, "unit": {"type": ["string", "null"], "description": "kg, shpt, days, month, pct, ..."},
@@ -160,7 +168,11 @@ INSTRUCTION = obj({
     "charge_code": SN,
     "months": {"type": ["array", "null"], "items": S, "description": "YYYY-MM months it covers, if it names months"},
     "new_date": {"type": ["string", "null"], "description": "Extended due date or new end date"},
-    "condition": {"type": ["string", "null"], "description": "Any condition the waiver/extension sets"},
+    "condition": {"type": ["string", "null"], "description": "Only a precondition the waiver or extension "
+                  "depends on (e.g. 'provided the balance is paid by 30 June'). Not advice on how to handle an invoice."},
+    "condition_kind": {"type": "string", "enum": ["none", "paid_by_date", "other"]},
+    "condition_date": {"type": ["string", "null"], "description": "For paid_by_date: the date (YYYY-MM-DD)"},
+    "condition_invoice": {"type": ["string", "null"], "description": "For paid_by_date: the invoice that must be paid"},
     "amount": NN,
     "summary": S,
 } | QUOTE)

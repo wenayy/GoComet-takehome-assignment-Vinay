@@ -1,0 +1,13 @@
+name: collected not delivered
+mailbox: evals/mailboxes/collected_not_delivered
+as_of: '2041-09-30'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0007
+    class: overcharge
+  verdict: finding
+  amount_usd: '90.00'
+  action: draft:dispute
+why: the consignee collected it; clause 2.9 makes the delivery fee due only when the
+  carrier delivers

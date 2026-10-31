@@ -1,0 +1,13 @@
+name: new layout overcharge
+mailbox: evals/mailboxes/new_layout_overcharge
+as_of: '2041-06-30'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0001
+    class: overcharge
+  verdict: finding
+  amount_usd: '73.08'
+  action: draft:dispute
+why: 180 kg x 5.45 = 981.00 billed vs 180 x 5.10 = 918.00 (63.00); fuel 16% 156.96
+  vs 146.88 (10.08); 73.08

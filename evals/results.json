@@ -1,0 +1,99 @@
+{
+ "harness": "harness/harness.py",
+ "passed": 15,
+ "total": 15,
+ "your_cases": 13,
+ "score": 1.0,
+ "cases": [
+  {
+   "case": "band_edge_45kg.yaml",
+   "name": "band edge 45kg",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "collected_not_delivered.yaml",
+   "name": "collected not delivered",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "dry_ice_not_hazardous.yaml",
+   "name": "dry ice not hazardous",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "expiry_61_days_out.yaml",
+   "name": "expiry 61 days out",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "expiry_exactly_60_days.yaml",
+   "name": "expiry exactly 60 days",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "feedback_accepted_rate_closes_its_key.yaml",
+   "name": "feedback accepted rate closes its key",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "feedback_other_lane_keeps_its_answer.yaml",
+   "name": "feedback other lane keeps its answer",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "injection_in_email.yaml",
+   "name": "injection in email",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "late_fee_risk_due_in_14_days.yaml",
+   "name": "late fee risk due in 14 days",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "new_layout_overcharge.yaml",
+   "name": "new layout overcharge",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "sample_conflict.yaml",
+   "name": "amendment and rate notice disagree",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "sample_overcharge.yaml",
+   "name": "wrong rate on one freight line",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "threshold_5000_autonomous.yaml",
+   "name": "threshold 5000 autonomous",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "waiver_seen_only_quoted.yaml",
+   "name": "waiver seen only quoted",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "waiver_unauthorised_sender.yaml",
+   "name": "waiver unauthorised sender",
+   "pass": true,
+   "diff": []
+  }
+ ]
+}

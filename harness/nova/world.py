@@ -233,10 +233,24 @@ def _people(ref: str, rows) -> list[Person]:
     return out
 
 
-def _label_map(rows) -> dict:
+# what each contract's own charge codes mean, so the checks never depend on one carrier's code names
+CANON = {"freight": "FRT", "fuel": "FUEL", "security": "SEC", "peak": "PEAK", "dangerous_goods": "DG",
+         "dry_ice": "DRYICE", "storage": "STOR", "delivery": "DLV", "customs": "CUSTOMS", "late_fee": "LATE",
+         "tax": "TAX", "duty": "DUTY", "carrier_cost": "COST", "margin": "MARGIN", "special_handling": "HDL"}
+
+
+def _canon(code, category) -> str:
+    code = str(code or "").upper().strip()
+    return CANON.get(str(category or "").lower()) or code
+
+
+def _label_map(rows, code_map: dict) -> dict:
     m = {}
     for r in rows or []:
-        code = str(r.get("code") or "").upper()
+        raw = str(r.get("code") or "").upper()
+        code = CANON.get(str(r.get("category") or "").lower()) or code_map.get(raw) or raw
+        code_map.setdefault(raw, code)
+        m[norm_name(raw)] = code
         for lab in r.get("labels") or []:
             m[norm_name(lab)] = code
     return m
@@ -260,13 +274,16 @@ def _contract_from(facts: dict, doc: dict) -> Contract | None:
     for f in c.get("fx") or []:
         if f.get("month") and D(f.get("inr_per_usd")) is not None:
             k.fx[str(f["month"])[:7]] = (D(f["inr_per_usd"]), cite(doc["ref"], f))
+    code_map = {}
     for a in c.get("accessorials") or []:
         if a.get("code"):
-            k.fees[str(a["code"]).upper()] = a | {"_cite": cite(doc["ref"], a)}
-    k.labels = _label_map(c.get("charge_labels"))
+            canon = _canon(a["code"], a.get("category"))
+            code_map[str(a["code"]).upper()] = canon
+            k.fees[canon] = a | {"_cite": cite(doc["ref"], a), "_code": str(a["code"]).upper()}
+    k.labels = _label_map(c.get("charge_labels"), code_map)
     for a in c.get("accessorials") or []:
         if a.get("code") and a.get("name"):
-            k.labels.setdefault(norm_name(a["name"]), str(a["code"]).upper())
+            k.labels.setdefault(norm_name(a["name"]), code_map[str(a["code"]).upper()])
     for name, q in (c.get("clause_quotes") or {}).items():
         if isinstance(q, dict):
             k.clauses[name] = cite(doc["ref"], q)

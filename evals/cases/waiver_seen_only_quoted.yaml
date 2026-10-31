@@ -1,0 +1,13 @@
+name: waiver seen only quoted
+mailbox: evals/mailboxes/waiver_seen_only_quoted
+as_of: '2041-07-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0005
+    class: waived_but_billed
+  verdict: cannot_determine
+  action: draft:request_document
+  missing_doc: email
+why: 'the waiver exists only quoted in a forward: ask the sender (on Schedule A for
+  waivers) for the original'
