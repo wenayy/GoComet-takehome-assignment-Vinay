@@ -63,14 +63,15 @@ Measured from logged token usage on real runs over the practice, exam and eval m
 attachment plus six per contract, about 1.2 calls per document, averaging about 8,800 input and 1,030 output tokens a
 call (most of the input is the extraction schema, sent every time). At list prices that is about **$83 per 1,000
 documents on Claude Opus 5** ($0.070 a call) and **$34 on Sonnet 5** ($0.029). Report time is pure Python and free.
-With 8 parallel workers, 1,000 documents take roughly 30-40 minutes (estimated from per-call latency). Prompt caching
-of the fixed schema and system prompt would cut input cost by about half; I left it out because I could not test it.
+With 8 parallel workers, 1,000 documents take roughly 30-40 minutes (estimated from per-call latency). Claude calls
+mark the fixed schema and instructions cacheable, which should roughly halve input cost; verified against a local fake
+API (markers sent, a rejection falls back to no caching) but not yet measured on the real one.
 
 ## What I'd do next
 
 - Margin step-down credits: the schema reads them, the check isn't written yet.
 - The extraction is the weak point: the model sometimes skips a table or writes numbers its own way. Every bug of that
   kind was caught by comparing models and by our evals, then fixed in code (one table per call, tolerant number
-  parsing). I'd add an automatic check that invoice lines add up to the printed total, and re-read when they don't.
-- Prompt caching for the schema, and a fitted confidence model once there are labelled mistakes to fit.
+  parsing). Invoices are now self-checked (lines must add up to the printed subtotal, else one re-read).
+- Measure prompt caching on the real API, and fit the confidence model once there are labelled mistakes.
 - Evals for feedback kinds the practice set doesn't show (`override_amount`, `resolve_conflict`, `reject`).
