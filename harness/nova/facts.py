@@ -113,8 +113,9 @@ CONTRACT = obj({
 })
 
 LINE = obj({
-    "awb": {"type": ["string", "null"], "description": "The shipment's own waybill on this line: the house AWB when "
-            "one is printed (e.g. 'XX123-H1'), not the master AWB it belongs to"},
+    "awb": {"type": ["string", "null"], "description": "The shipment's waybill number on this line, whatever the "
+            "column is called (AWB, Waybill, Shipment, Consignment): the house AWB when one is printed (e.g. "
+            "'XX123-H1'), not the master AWB it belongs to"},
     "pickup_date": {"type": ["string", "null"], "description": "The line's pickup date, whatever the column is "
                     "called (Pickup, Collected, Ship date, Picked up)"},
     "description": S,

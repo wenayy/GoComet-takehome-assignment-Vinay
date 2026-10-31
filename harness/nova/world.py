@@ -419,7 +419,23 @@ def build_world(store, as_of: str) -> World:
                     w.payments[iid] = (p, cite(ref, p), doc["received"])
     for copies in w.invoices.values():
         copies.sort(key=lambda i: (i.received_at, i.ref))
+    _fill_awbs(w)
     return w
+
+
+def _fill_awbs(w: World) -> None:
+    """A line the extractor left without a waybill: take a token of the line that is a waybill we know from tracking
+    or an AWB. Layouts name that column many ways ('Shipment', 'Consignment'), and the line text is the ground truth."""
+    known = set(w.events) | set(w.shipments)
+    for copies in list(w.invoices.values()) + [[c] for c in w.credits]:
+        for inv in copies:
+            for ln in inv.lines:
+                if ln.awb or not ln.cite.quote:
+                    continue
+                for tok in re.findall(r"[A-Z0-9][A-Z0-9-]{5,}", ln.cite.quote.upper()):
+                    if tok in known:
+                        ln.awb = tok
+                        break
 
 
 def _sender(email: dict | None) -> tuple[str | None, str | None]:

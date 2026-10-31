@@ -270,7 +270,9 @@ def check_overcharge(world: World) -> list[Item]:
         for ln in inv.lines:
             if ln.code in ("LATE", "TAX", "DUTY"):
                 continue
-            by_awb.setdefault(ln.awb or f"#{ln.idx}", []).append(ln)
+            # no waybill on the line: lines with the same pickup date and lane are one shipment
+            by_awb.setdefault(ln.awb or f"#{ln.pickup}|{ln.lane}|{ln.idx if not (ln.pickup and ln.lane) else ''}",
+                              []).append(ln)
         priced: list[Priced] = []
         conflict = missing = None
         weak: list[str] = []
