@@ -357,6 +357,56 @@ def case_specs() -> list[dict]:
         expect=dict(key={"invoice_id": "HCA-41-0014", "class": "late_fee_risk"}, verdict="finding",
                     amount_usd="8.91", action="internal:payment_reminder", deadline="2041-10-01"),
         why="due 2041-10-01 is 14 days after as_of: one month's simple interest 1.50% x 594.15 = 8.91"))
+    # 14/15. a one-off approval covers its key and month only (applying it to July caps the score)
+    waiver = eml(person("kam"), addr("ap"), "2041-06-01T09:00:00", "Door delivery June and July",
+                 "As agreed on our call, we will waive door delivery fees on your June and July 2041 consignments."
+                 "\n\nRosalind Achterberg")
+    adv_jun = [("UKL1-DEF2", "HA10000015", "Door delivery", "1 consignment", "90.00", "2041-06-10", Decimal("90.00"))]
+    adv_jul = [("UKL1-DEF2", "HA10000016", "Door delivery", "1 consignment", "90.00", "2041-07-06", Decimal("90.00"))]
+    fb_once = {"schema_version": "1.0", "world": "EV", "after_batch": "batch_01", "decided_at": "2041-06-20T10:00:00Z",
+               "decided_by": {"name": PEOPLE["ap"][0], "role": "Payables Lead", "entity": SHIPPER_CODE},
+               "items": [{"item_id": "fb-ev-02", "finding_key": {"invoice_id": "HCA-41-0015", "class": "waived_but_billed"},
+                          "solicited": False, "decision": "one_off_approval",
+                          "fact": {"type": "waiver_scope", "subject": {"person": PEOPLE["kam"][0], "party": CARRIER_CODE},
+                                   "value": {"months": ["2041-06"]}, "evidence": "Confirmed by phone"},
+                          "scope": {"kind": "one_off", "applies_to": {"invoice_id": "HCA-41-0015"},
+                                    "valid_from": "2041-06-20", "valid_to": None}}]}
+    once = [[msa_email(), waiver, advice_email("HCA-41-0015", "2041-06-15T10:00:00", adv_jun),
+             tracking_email("2041-06-18T18:00:00", [("HA10000015", "COLLECTED_FROM_SHIPPER", "2041-06-10", "UKL1"),
+                                                    ("HA10000015", "DELIVERED", "2041-06-12", "DEF2")])],
+            [advice_email("HCA-41-0016", "2041-07-12T10:00:00", adv_jul),
+             tracking_email("2041-07-31T18:00:00", [("HA10000016", "COLLECTED_FROM_SHIPPER", "2041-07-06", "UKL1"),
+                                                    ("HA10000016", "DELIVERED", "2041-07-08", "DEF2")])]]
+    specs.append(dict(
+        name="one_off_waiver_approval_applies", as_of="2041-07-31", mode="supervised", batches=once,
+        feedback={"batch_01": fb_once},
+        expect=dict(key={"invoice_id": "HCA-41-0015", "class": "waived_but_billed"}, verdict="finding",
+                    amount_usd="90.00", action="draft:dispute"),
+        why="the sender has no waiver authority, but a person approved this waiver for this advice and June: 90.00"))
+    specs.append(dict(
+        name="one_off_waiver_not_permanent", as_of="2041-07-31", mode="supervised", batches=once,
+        feedback={"batch_01": fb_once},
+        expect=dict(key={"invoice_id": "HCA-41-0016", "class": "waived_but_billed"}, verdict="no_finding"),
+        why="the approval was one-off for HCA-41-0015 and June; July's delivery fee stands (unauthorised sender)"))
+
+    # 16. a backdated variation turns an invoice that was right into an overcharge
+    rows = freight_rows("HA10000017", 150, "5.10", "16.00", "2041-05-10")
+    variation = pdf([f"VARIATION No. 1 to AIR CARGO SERVICES AGREEMENT {CID}", "Variation reference " + CID + "/V1",
+                     "Signed by both parties on 2041-07-20.",
+                     "With effect from 2041-05-01 (backdated), the Appendix 1 tariff for route UKL1-DEF2 is replaced "
+                     "for every validity window by:",
+                     "Route | Band | Rate", "UKL1-DEF2 | floor charge | 110.00", "UKL1-DEF2 | up to 44.5 kg | 6.10",
+                     "UKL1-DEF2 | 45 to 99.5 kg | 5.60", "UKL1-DEF2 | 100 to 299.5 kg | 4.80",
+                     "UKL1-DEF2 | 300 kg and above | 4.40", "All other terms are unchanged."])
+    specs.append(dict(
+        name="backdated_variation_reprices", as_of="2041-07-31", mode="supervised",
+        batches=[[msa_email(), advice_email("HCA-41-0017", "2041-05-15T10:00:00", rows),
+                  tracking_email("2041-05-31T18:00:00", [("HA10000017", "COLLECTED_FROM_SHIPPER", "2041-05-10", "UKL1")])],
+                 [eml(person("kam"), addr("ap"), "2041-07-21T09:00:00", f"Signed variation 1 to {CID}",
+                      "The signed variation is attached.", [(f"{CID}-V1.pdf", variation)])]],
+        expect=dict(key={"invoice_id": "HCA-41-0017", "class": "overcharge"}, verdict="finding",
+                    amount_usd="52.20", action="draft:dispute"),
+        why="correct at 5.10 until the variation arrives; backdated to 2041-05-01 at 4.80: 45.00 + fuel 16% 7.20"))
     return specs
 
 

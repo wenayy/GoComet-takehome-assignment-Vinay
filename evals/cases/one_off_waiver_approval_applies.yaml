@@ -1,0 +1,15 @@
+name: one off waiver approval applies
+mailbox: evals/mailboxes/one_off_waiver_approval_applies
+as_of: '2041-07-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0015
+    class: waived_but_billed
+  verdict: finding
+  amount_usd: '90.00'
+  action: draft:dispute
+why: 'the sender has no waiver authority, but a person approved this waiver for this
+  advice and June: 90.00'
+feedback:
+  batch_01: evals/feedback/one_off_waiver_approval_applies_batch_01.json

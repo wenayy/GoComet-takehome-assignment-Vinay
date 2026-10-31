@@ -1,0 +1,43 @@
+{
+ "schema_version": "1.0",
+ "world": "EV",
+ "after_batch": "batch_01",
+ "decided_at": "2041-06-20T10:00:00Z",
+ "decided_by": {
+  "name": "Callum Iversen-Shah",
+  "role": "Payables Lead",
+  "entity": "BWB-UK"
+ },
+ "items": [
+  {
+   "item_id": "fb-ev-02",
+   "finding_key": {
+    "invoice_id": "HCA-41-0015",
+    "class": "waived_but_billed"
+   },
+   "solicited": false,
+   "decision": "one_off_approval",
+   "fact": {
+    "type": "waiver_scope",
+    "subject": {
+     "person": "Rosalind Achterberg",
+     "party": "HAC-UK"
+    },
+    "value": {
+     "months": [
+      "2041-06"
+     ]
+    },
+    "evidence": "Confirmed by phone"
+   },
+   "scope": {
+    "kind": "one_off",
+    "applies_to": {
+     "invoice_id": "HCA-41-0015"
+    },
+    "valid_from": "2041-06-20",
+    "valid_to": null
+   }
+  }
+ ]
+}

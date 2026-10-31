@@ -1,10 +1,16 @@
 {
  "harness": "harness/harness.py",
- "passed": 15,
- "total": 15,
- "your_cases": 13,
+ "passed": 18,
+ "total": 18,
+ "your_cases": 16,
  "score": 1.0,
  "cases": [
+  {
+   "case": "backdated_variation_reprices.yaml",
+   "name": "backdated variation reprices",
+   "pass": true,
+   "diff": []
+  },
   {
    "case": "band_edge_45kg.yaml",
    "name": "band edge 45kg",
@@ -62,6 +68,18 @@
   {
    "case": "new_layout_overcharge.yaml",
    "name": "new layout overcharge",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "one_off_waiver_approval_applies.yaml",
+   "name": "one off waiver approval applies",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "one_off_waiver_not_permanent.yaml",
+   "name": "one off waiver not permanent",
    "pass": true,
    "diff": []
   },

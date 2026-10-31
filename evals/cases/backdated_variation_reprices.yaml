@@ -1,0 +1,13 @@
+name: backdated variation reprices
+mailbox: evals/mailboxes/backdated_variation_reprices
+as_of: '2041-07-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0017
+    class: overcharge
+  verdict: finding
+  amount_usd: '52.20'
+  action: draft:dispute
+why: 'correct at 5.10 until the variation arrives; backdated to 2041-05-01 at 4.80:
+  45.00 + fuel 16% 7.20'

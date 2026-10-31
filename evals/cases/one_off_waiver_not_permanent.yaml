@@ -1,0 +1,13 @@
+name: one off waiver not permanent
+mailbox: evals/mailboxes/one_off_waiver_not_permanent
+as_of: '2041-07-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0016
+    class: waived_but_billed
+  verdict: no_finding
+why: the approval was one-off for HCA-41-0015 and June; July's delivery fee stands
+  (unauthorised sender)
+feedback:
+  batch_01: evals/feedback/one_off_waiver_not_permanent_batch_01.json
