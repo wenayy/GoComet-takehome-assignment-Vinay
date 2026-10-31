@@ -60,7 +60,7 @@ committing it before moving on.
    and recommended against adding it; implemented the two-reader cross-check for scans instead and tested the local
    reader on the exam scan.*
 
-7. > i have put it in the .env i have ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic NOVA_MODEL=deepseek-chat
+2. > i have put it in the .env i have ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic NOVA_MODEL=deepseek-chat
    > done this and then in anthropic api key i have put the deepseek api key can u check now
 
    *The settings had gone into `.env.example` (tracked by git), so the key was moved to the gitignored `.env` before
