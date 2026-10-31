@@ -47,10 +47,22 @@ def call_tool(store: Store, *, system: str, content: list | str, tool_name: str,
     last = None
     for attempt in range(3):
         try:
+            cache = _caching(model)
+            tool = {"name": tool_name, "description": "Record the result.", "input_schema": schema}
+            sys_arg = system
+            if cache:
+                # the schema and instructions are identical across documents: mark them cacheable
+                tool["cache_control"] = {"type": "ephemeral"}
+                sys_arg = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
             resp = client.messages.create(
-                model=model, max_tokens=max_tokens, system=system, messages=messages,
-                tools=[{"name": tool_name, "description": "Record the result.", "input_schema": schema}],
+                model=model, max_tokens=max_tokens, system=sys_arg, messages=messages, tools=[tool],
                 tool_choice={"type": "tool", "name": tool_name}, **_model_options(model))
+        except anthropic.BadRequestError as e:
+            if cache and _CACHE["on"]:
+                _CACHE["on"] = False  # the endpoint won't take cache_control: carry on without it
+                last = e
+                continue
+            raise LLMError(f"{tool_name} rejected: {e}") from e
         except (anthropic.APIConnectionError, anthropic.RateLimitError, anthropic.InternalServerError) as e:
             last = e  # transient: back off and retry
             time.sleep(2 * (attempt + 1))
@@ -68,6 +80,14 @@ def call_tool(store: Store, *, system: str, content: list | str, tool_name: str,
     raise LLMError(f"{tool_name} failed: {last}")
 
 
+_CACHE = {"on": True}
+
+
+def _caching(model: str) -> bool:
+    """Prompt caching on Claude models only; switched off for the run if the API ever rejects it."""
+    return _CACHE["on"] and model.startswith("claude-")
+
+
 def _model_options(model: str) -> dict:
     """Reading a document into fields is transcription, not reasoning: on Claude models that think by default, ask for
     low effort. Haiku 4.5 and non-Claude endpoints don't take the option."""
@@ -82,7 +102,9 @@ def _log_usage(store: Store, model: str, tool: str, resp) -> None:
     if u is None:
         return
     line = {"model": model, "tool": tool, "input_tokens": getattr(u, "input_tokens", None),
-            "output_tokens": getattr(u, "output_tokens", None)}
+            "output_tokens": getattr(u, "output_tokens", None),
+            "cache_read": getattr(u, "cache_read_input_tokens", None),
+            "cache_write": getattr(u, "cache_creation_input_tokens", None)}
     path = os.environ.get("NOVA_USAGE_LOG") or store.root / "llm_usage.jsonl"   # .env may point it outside the state dir
     with open(path, "a") as f:
         f.write(json.dumps(line) + "\n")

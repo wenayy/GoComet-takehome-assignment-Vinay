@@ -192,6 +192,7 @@ class Invoice:
     email_cite: Cite | None = None
     scan: bool = False
     ocr_agreement: float | None = None   # share of the scan's amounts the second OCR reading confirms
+    lines_ok: bool = True                # the lines we read add up to the printed subtotal
 
 
 @dataclass
@@ -474,7 +475,8 @@ def _invoice(w: World, f: dict, doc: dict, email: dict | None) -> Invoice | None
                    is_copy=bool(v.get("is_copy")), requests_payment=v.get("requests_payment") is not False,
                    credit_type=v.get("credit_type"), credit_period=v.get("credit_period"),
                    references=[norm_id(r) for r in v.get("references_invoices") or []], email_cite=email_cite,
-                   scan=bool(doc.get("scan")), ocr_agreement=(doc.get("ocr") or {}).get("agreement"))
+                   scan=bool(doc.get("scan")), ocr_agreement=(doc.get("ocr") or {}).get("agreement"),
+                   lines_ok=v.get("lines_check") != "mismatch")
 
 
 def _house_awb(ln: dict) -> str | None:

@@ -93,6 +93,8 @@ def _unattended_problems(it: Item, conflicts: set) -> list[str]:
             probs.append("open conflict on the lane")
     if it.invoice is not None and it.invoice.scan:
         probs.append("read from a scan")
+    if it.invoice is not None and not it.invoice.lines_ok:
+        probs.append("invoice lines don't add up to its total")
     return probs
 
 
@@ -134,6 +136,8 @@ def confidence(it: Item, conflicts: set) -> float:
     if it.invoice is not None and it.invoice.scan:
         agree = it.invoice.ocr_agreement
         c -= 0.08 if agree is not None and agree >= 0.98 else 0.2
+    if it.invoice is not None and not it.invoice.lines_ok:
+        c -= 0.25
     if len([e for e in it.evidence if e.ev()]) < 2:
         c -= 0.1
     if it.learned:

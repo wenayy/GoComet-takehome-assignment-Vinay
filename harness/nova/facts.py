@@ -472,9 +472,40 @@ def read_facts(store, doc: dict, email: dict | None) -> dict:
         facts = call_tool(store, system=SYSTEM, tool_name="record_document", schema=FACTS_SCHEMA, content=text)
         if facts.get("kind") in ("contract", "amendment"):
             facts["contract"] = _read_contract(store, doc, text)
+        if facts.get("invoice") and not lines_add_up(facts["invoice"]):
+            facts = _reread_invoice(store, text, facts)
         _repair_quotes(facts, doc["pages"])
     facts["ref"] = doc["ref"]
     return facts
+
+
+def _line_sum(inv: dict):
+    amounts = [D(ln.get("amount")) for ln in inv.get("lines") or []]
+    return sum(a for a in amounts if a is not None) if amounts else None
+
+
+def lines_add_up(inv: dict) -> bool:
+    """The lines we read must add up to the printed subtotal (or total less tax). A table the model skipped, a line it
+    split or merged, a number it misread: all show up here without knowing anything about the layout."""
+    got = _line_sum(inv)
+    want = D(inv.get("subtotal"))
+    if want is None and D(inv.get("total")) is not None:
+        want = D(inv["total"]) - (D(inv.get("tax")) or 0)
+    if got is None or want is None:
+        return True  # nothing printed to check against
+    return abs(got - want) <= D("0.01")
+
+
+def _reread_invoice(store, text: str, first: dict) -> dict:
+    inv = first["invoice"]
+    note = (f"Check before answering: the line amounts you read add up to {_line_sum(inv)}, but the document prints "
+            f"a subtotal of {inv.get('subtotal') or inv.get('total')}. Re-read every charge line of the document, one "
+            "entry per printed line, so that they add up.\n\n")
+    second = call_tool(store, system=SYSTEM, tool_name="record_document", schema=FACTS_SCHEMA, content=note + text,
+                       cache_tag="reread")
+    best = second if second.get("invoice") and lines_add_up(second["invoice"]) else first
+    best["invoice"]["lines_check"] = "ok" if lines_add_up(best["invoice"]) else "mismatch"
+    return best
 
 
 def num(x):
