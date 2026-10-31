@@ -27,13 +27,13 @@ DEFAULT_STATE = ".state"
 
 
 def _load_dotenv() -> None:
-    """Local development only: read KEY=VALUE lines from a gitignored .env. The grader sets the environment itself."""
+    """Local development only: KEY=VALUE lines from a gitignored .env win over the shell. The grader has no .env."""
     env = Path(__file__).resolve().parents[1] / ".env"
     if env.is_file():
         for line in env.read_text().splitlines():
             k, sep, v = line.strip().partition("=")
             if sep and not k.startswith("#"):
-                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+                os.environ[k.strip()] = v.strip().strip('"').strip("'")
 
 
 def ingest(batch_dir: str, state_dir: str) -> None:
