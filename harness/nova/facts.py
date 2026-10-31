@@ -475,7 +475,9 @@ def read_facts(store, doc: dict, email: dict | None) -> dict:
         if facts.get("invoice") and not lines_add_up(facts["invoice"]):
             facts = _reread_invoice(store, text, facts)
         _repair_quotes(facts, doc["pages"])
-    facts["ref"] = doc["ref"]
+    # provenance on the fact record itself, so one facts file is auditable on its own
+    facts.update(ref=doc["ref"], email_ref=doc["email_ref"], received=doc["received"],
+                 received_at=doc["received_at"], scan=doc.get("scan", False))
     return facts
 
 
