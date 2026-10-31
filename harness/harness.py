@@ -16,25 +16,39 @@ checks them. Replace the NotImplementedError bodies with your code.
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 DEFAULT_STATE = ".state"
 
 
+def _load_dotenv() -> None:
+    """Local development only: read KEY=VALUE lines from a gitignored .env. The grader sets the environment itself."""
+    env = Path(__file__).resolve().parents[1] / ".env"
+    if env.is_file():
+        for line in env.read_text().splitlines():
+            k, sep, v = line.strip().partition("=")
+            if sep and not k.startswith("#"):
+                os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
 def ingest(batch_dir: str, state_dir: str) -> None:
-    raise NotImplementedError(
-        f"ingest is not written yet: read the .eml files in {batch_dir} and keep what you learn under {state_dir}")
+    from nova.ingest import ingest_batch
+    ingest_batch(batch_dir, state_dir)
 
 
 def report(as_of: str, mode: str, state_dir: str) -> dict:
-    raise NotImplementedError(
-        f"report is not written yet: return the report.json dict for --as-of {as_of} in {mode} mode "
-        "(see grader/schema/report.schema.json and data/examples/*/expected_finding.json)")
+    from nova.report import build_report
+    return build_report(as_of, mode, state_dir)
 
 
 def feedback(feedback_file: str, state_dir: str) -> None:
-    raise NotImplementedError(
-        f"feedback is not written yet: store the decisions in {feedback_file} under {state_dir} so later reports use them")
+    from nova.feedback import take_feedback
+    take_feedback(feedback_file, state_dir)
 
 
 def main(argv=None) -> int:
@@ -51,11 +65,11 @@ def main(argv=None) -> int:
     p.add_argument("feedback_file")
     p.add_argument("--state-dir", default=DEFAULT_STATE)
     a = ap.parse_args(argv)
+    _load_dotenv()
     try:
         if a.cmd == "ingest":
             ingest(a.batch_dir, a.state_dir)
         elif a.cmd == "report":
-            import json
             json.dump(report(a.as_of, a.mode, a.state_dir), sys.stdout, indent=1)
             sys.stdout.write("\n")
         else:
