@@ -21,6 +21,7 @@ import os
 import sys
 from pathlib import Path
 
+sys.dont_write_bytecode = True  # write nothing outside --state-dir, not even .pyc files
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 DEFAULT_STATE = ".state"
