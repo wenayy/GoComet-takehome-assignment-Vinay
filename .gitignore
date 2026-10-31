@@ -7,3 +7,4 @@ __pycache__/
 .llm_cache/
 .env.*
 !.env.example
+graphify-out/
