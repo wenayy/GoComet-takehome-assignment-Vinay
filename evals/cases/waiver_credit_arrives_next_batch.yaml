@@ -1,0 +1,11 @@
+name: waiver credit arrives next batch
+mailbox: evals/mailboxes/waiver_credit_arrives_next_batch
+as_of: '2041-08-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0021
+    class: waived_but_billed
+  verdict: no_finding
+why: a finding after batch 1; the credit note in batch 2 cancels it, so the later
+  report drops the key

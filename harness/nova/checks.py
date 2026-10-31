@@ -360,7 +360,12 @@ def check_overcharge(world: World) -> list[Item]:
             continue
         diffs = [p for p in priced if p.correct is not None and D(p.line.amount) is not None
                  and D(p.line.amount) > p.correct]
-        native = sum((D(p.line.amount) - p.correct for p in diffs), ZERO)
+        native = ZERO
+        credit_cites = []
+        for p in diffs:
+            already, cc = credited(world, inv, [p.line])
+            native += max(ZERO, D(p.line.amount) - p.correct - already)
+            credit_cites += cc
         if native <= 0:
             continue
         usd, fx_cite = to_usd(world, inv, native, k)
@@ -379,7 +384,7 @@ def check_overcharge(world: World) -> list[Item]:
             it.cite(p.line.cite)
         for p in diffs:
             it.cite(*p.why)
-        it.cite(k.clause("pricing_date"), fx_cite)
+        it.cite(k.clause("pricing_date"), fx_cite, *credit_cites)
         items.append(it)
     return items
 
@@ -393,6 +398,37 @@ def _holder(k: Contract, category: str, side: str) -> dict:
     if people:
         h |= {"person": people[0].name, "role": people[0].title}
     return h or {"party": "carrier"}
+
+
+def credited(world: World, inv: Invoice, lines: list) -> tuple[Decimal, list]:
+    """Credit already issued against these lines of this invoice: credit-note lines that name the invoice and match a
+    line's waybill and charge. A credit for another charge on the same invoice cancels nothing here; a partial credit
+    cancels part. Only credit notes received by as_of exist in the world, so a later credit changes a later report."""
+    total, cites = ZERO, []
+    for c in world.credits:
+        if c.credit_type in ("rebate", "improvement", "margin"):
+            continue
+        names = inv.id in c.references or any(inv.id in norm_id(f"{cl.reference} {cl.description} {cl.cite.quote}")
+                                              for cl in c.lines)
+        if not names:
+            continue
+        for cl in c.lines:
+            amt = abs(D(cl.amount) or ZERO)
+            if amt and any(cl.code and cl.code == t.code and (not cl.awb or not t.awb or cl.awb == t.awb) for t in lines):
+                total += amt
+                cites.append(cl.cite)
+        if not c.lines and len(lines) == 1:
+            # a one-line credit note: trust its total only when it names this invoice and the charge
+            if lines[0].code and _charge_code_in(world, inv, c, lines[0].code):
+                total += abs(D(c.total) or ZERO)
+                cites.append(c.total_cite)
+    return total, cites
+
+
+def _charge_code_in(world: World, inv: Invoice, c: Invoice, code: str) -> bool:
+    k = world.contract_of(inv)
+    text = norm_name(" ".join(p for p in (world.docs.get(c.ref) or {}).get("pages") or []))
+    return bool(k) and any(lab in text for lab, cd in k.labels.items() if cd == code and len(lab) > 3)
 
 
 # ---- 2. duplicate -----------------------------------------------------------------------------------------------------
@@ -550,8 +586,8 @@ def check_waivers(world: World) -> list[Item]:
         for w in waivers:
             if not _condition_met(world, w):
                 continue  # a conditional waiver takes effect only once its condition is met
-            code = (str(w.get("charge_code") or "").upper() or None)
-            code = _charge_code(k, w.get("charge")) or code
+            code = (_charge_code(k, w.get("charge")) or _charge_code(k, w.get("charge_code"))
+                    or (str(w.get("charge_code") or "").upper() or None))
             awb = norm_awb(w.get("awb")) if w.get("awb") else None
             months = {str(m)[:7] for m in (w.get("months") or [])}
             lines = [ln for ln in inv.lines if (code is None or ln.code == code) and (
@@ -581,7 +617,9 @@ def check_waivers(world: World) -> list[Item]:
                 cites.append(sched.cite)
             learned = learned or fb
         if hit_lines:
-            native = sum((D(ln.amount) or ZERO for ln in hit_lines), ZERO)
+            already, credit_cites = credited(world, inv, hit_lines)
+            native = sum((D(ln.amount) or ZERO for ln in hit_lines), ZERO) - already
+            cites += credit_cites
             usd, fx = to_usd(world, inv, native, k)
             if usd and usd > 0:
                 it = Item("waived_but_billed", {"invoice_id": iid}, amount=usd, native=native, outbound="dispute",

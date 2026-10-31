@@ -1,0 +1,11 @@
+name: waiver covers named shipment only
+mailbox: evals/mailboxes/waiver_covers_named_shipment_only
+as_of: '2041-07-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0023
+    class: waived_but_billed
+  verdict: no_finding
+why: the waiver names HA10000022 (May); June's HA10000023 delivery fee is billable
+  without a new waiver

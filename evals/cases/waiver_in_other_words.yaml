@@ -1,0 +1,13 @@
+name: waiver in other words
+mailbox: evals/mailboxes/waiver_in_other_words
+as_of: '2041-07-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0024
+    class: waived_but_billed
+  verdict: finding
+  amount_usd: '90.00'
+  action: draft:dispute
+why: '''write off the final-mile charge'' is a waiver of door delivery by the waivers
+  contact; the waybill is only in the subject'

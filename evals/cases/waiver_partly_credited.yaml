@@ -1,0 +1,12 @@
+name: waiver partly credited
+mailbox: evals/mailboxes/waiver_partly_credited
+as_of: '2041-07-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0020
+    class: waived_but_billed
+  verdict: finding
+  amount_usd: '50.00'
+  action: draft:dispute
+why: 'waived 90.00, credited 40.00 for that same line: 50.00 still owed back'

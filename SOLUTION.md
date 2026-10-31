@@ -40,10 +40,10 @@ precedence), `checks.py` (the six classes), `report.py` (feedback, actions per m
   Opus 5 and DeepSeek produce identical sheets.
 - **Every invoice is self-checked**: its lines must add up to its printed subtotal, or it is re-read once. On practice
   and exam, 1 of 84 needed it.
-- **Our evals: 18 of 18** (`evals/results.json`), 16 of them ours, built on a new carrier and customer with new
+- **Our evals: 25 of 25** (`evals/results.json`), 23 of them ours, built on a new carrier and customer with new
   contract wording, a new invoice layout (DD/MM/YYYY, thousands separators, other column names and charge codes) and
   the traps the brief lists: injection, unauthorised and quoted waivers, a one-off waiver that must not spread, the
-  $5,000 line in autonomous mode, expiry window edges, feedback scoped to one lane, a backdated variation.
+  $5,000 line in autonomous mode, expiry window edges, feedback scoped to one lane, a backdated variation, a waiver for one shipment only, a waiver in other words with the waybill only in the subject, an email telling the AI to ignore the contract, and credits against a waived fee (in full, in part, for another charge, arriving a batch later).
 - **The same results on two different models.** Practice and evals score the same on Claude Opus 5 (the default) and
   on DeepSeek, which is how I know the rules don't depend on one model's habits.
 
@@ -70,6 +70,12 @@ the extractor now records what each fee *is* (a category such as `dangerous_good
 mapped to those categories, and the checks use the category. The same contract's milestone export calls the pickup
 `COLLECTED_FROM_SHIPPER` and its invoices print the pickup date under "Collected"; both were missed, so the new-layout
 overcharge vanished. Both cases fail on the code before commit `f1ad993` and pass after it.
+
+A third bug was found by writing the credit cases: a credit note for a waived fee was never netted off, so a
+fee the carrier had already credited would have been disputed again (money wrongly disputed costs double). Credits are
+now matched to the invoice line by waybill and charge, so a partial credit reduces the amount and a credit for another
+charge reduces nothing. With that netting switched off, `waiver_fully_credited`, `waiver_partly_credited` and
+`waiver_credit_arrives_next_batch` fail; with it, they pass.
 
 A second bug came from comparing models rather than from a case: replayed through Claude Opus 5, practice dropped to
 83.0 because Opus writes percentages as `"23.54%"` and my number parser rejected them, so no fuel line was ever

@@ -1,0 +1,13 @@
+name: waiver credit for other charge
+mailbox: evals/mailboxes/waiver_credit_for_other_charge
+as_of: '2041-07-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0020
+    class: waived_but_billed
+  verdict: finding
+  amount_usd: '90.00'
+  action: draft:dispute
+why: 'the credit is for screening, not the waived delivery fee: all 90.00 still owed
+  back'

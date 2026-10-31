@@ -475,13 +475,13 @@
        "step": "ingest",
        "rc": 0,
        "stderr": "",
-       "secs": 3.1
+       "secs": 3.6
       },
       {
        "step": "report",
        "rc": 0,
        "stderr": "",
-       "secs": 0.1
+       "secs": 0.2
       }
      ],
      "items": 17

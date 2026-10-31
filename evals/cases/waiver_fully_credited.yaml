@@ -1,0 +1,10 @@
+name: waiver fully credited
+mailbox: evals/mailboxes/waiver_fully_credited
+as_of: '2041-07-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0020
+    class: waived_but_billed
+  verdict: no_finding
+why: 'the carrier credited the waived 90.00 in full: nothing left to recover'
