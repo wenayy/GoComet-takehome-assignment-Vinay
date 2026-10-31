@@ -94,13 +94,13 @@ committing it before moving on.
 
 
 3. > now can we use the anthropic api key also real one not the deepseek compatible to see which one gave the better
-   > output … lets do one call with opus 5 and then with sonnet 5
+   > otput like that … lets do one call with opus 5 and then with sonnet 5
 
    *One test call to each model first, then the practice, exam and eval mailboxes on Opus 5 and Sonnet 5. Opus scored
    lower than DeepSeek; replaying its saved answers (no further spend) traced it to the `%` parser and the dropped
    rate notice. After both fixes, Opus and DeepSeek produce identical exam sheets and 99.6 on practice.*
 
-4. > how are u sure that the questions like, in the brief.pdf, performance improvement and with real life data it would
+4. > how are u sure that the qeustions like, in the brief.pdf , performance improvement and with real life data it would
    > work better like that
 
    *Separated what the tests prove from what they can't; the gaps became the next three items.*
