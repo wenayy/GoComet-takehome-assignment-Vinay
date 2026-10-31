@@ -156,6 +156,12 @@ def _held(world: World, k: Contract, m: dict, lane: str) -> bool:
     if not name:
         return True
     cited_in = m["_cite"].doc
+    # an annex that is part of the citing document itself ('Annex A: Express rates', or its rates for the lane)
+    own = world.docs.get(cited_in) or {}
+    if any(norm_name(line).startswith(name + ":") for p in own.get("pages") or [] for line in p.split("\n")):
+        return True
+    if any(r.cite.doc == cited_in and r.lane == lane for r in world.rate_rows):
+        return True
     for r in world.rate_rows:
         if r.contract == k.id and r.lane == lane and r.cite.doc != cited_in and r.source in ("amendment", "msa") \
                 and r.cite.doc != k.ref:

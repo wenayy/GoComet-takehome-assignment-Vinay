@@ -107,7 +107,9 @@ CONTRACT = obj({
 })
 
 LINE = obj({
-    "awb": SN, "pickup_date": SN, "description": S,
+    "awb": {"type": ["string", "null"], "description": "The shipment's own waybill on this line: the house AWB when "
+            "one is printed (e.g. 'XX123-H1'), not the master AWB it belongs to"},
+    "pickup_date": SN, "description": S,
     "code": {"type": ["string", "null"], "description": "Charge code if you can tell it: FRT, FUEL, SEC, PEAK, DG, "
              "DRYICE, STOR, DLV, CUSTOMS, ACCT, SPROG, PPROG, COST, MARGIN, HDL, DUTY, TAX, LATE, or other"},
     "lane": SN, "qty": NN, "unit": {"type": ["string", "null"], "description": "kg, shpt, days, month, pct, ..."},
@@ -407,13 +409,47 @@ def _rapidocr(png: bytes) -> str:
     return "\n".join(" ".join(t for _, t in sorted(r[1])) for r in rows)
 
 
+# ---- contracts, read section by section -------------------------------------------------------------------------------
+_CP = CONTRACT["properties"]
+CONTRACT_SECTIONS = {
+    "record_contract_terms": (
+        "Record the contract's identity, term, payment, rebate and credit terms, the documents it cites but does not "
+        "include, and one-line quotes of its key clauses.",
+        [k for k in _CP if k not in ("rate_periods", "rates", "fuel", "accessorials", "charge_labels", "fx",
+                                     "schedule1")]),
+    "record_rate_tables": (
+        "Record every rate row this document sets, in every rate table (Annex A, or a table in an amendment or "
+        "schedule that replaces rates). One entry per lane, weight band and period: a row with P1 and P2 columns is two "
+        "entries. Minimum charges are rows too. Leave rates empty only if the document sets no rates.",
+        ["contract_id", "rate_periods", "rates"]),
+    "record_schedules": (
+        "Record the fuel surcharge table, the exchange-rate table, the accessorial fees, the charge-code labels and "
+        "Schedule 1 (every authorised person, with party code and categories). Leave a list empty if the document "
+        "doesn't have it.",
+        ["contract_id", "fuel", "fx", "accessorials", "charge_labels", "schedule1"]),
+}
+
+
+def _read_contract(store, doc: dict, text: str) -> dict:
+    merged: dict = {}
+    for tool, (task, keys) in CONTRACT_SECTIONS.items():
+        schema = obj({k: _CP[k] for k in keys})
+        part = call_tool(store, system=SYSTEM, tool_name=tool, schema=schema, content=f"{task}\n\n{text}")
+        for k, v in part.items():
+            if v not in (None, [], {}) or k not in merged:
+                merged[k] = v
+    return merged
+
+
 # ---- entry point ------------------------------------------------------------------------------------------------------
 def read_facts(store, doc: dict, email: dict | None) -> dict:
     if _is_long_table(doc):
         facts = _read_table(store, doc, email)
     else:
-        facts = call_tool(store, system=SYSTEM, tool_name="record_document", schema=FACTS_SCHEMA,
-                          content=_doc_header(doc, email) + "\n" + _pages_text(doc["pages"]))
+        text = _doc_header(doc, email) + "\n" + _pages_text(doc["pages"])
+        facts = call_tool(store, system=SYSTEM, tool_name="record_document", schema=FACTS_SCHEMA, content=text)
+        if facts.get("kind") in ("contract", "amendment"):
+            facts["contract"] = _read_contract(store, doc, text)
         _repair_quotes(facts, doc["pages"])
     facts["ref"] = doc["ref"]
     return facts

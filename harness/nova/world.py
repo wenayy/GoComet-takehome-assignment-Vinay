@@ -421,9 +421,11 @@ def _invoice(w: World, f: dict, doc: dict, email: dict | None) -> Invoice | None
     kind = "credit_note" if f["kind"] == "credit_note" else f["kind"]
     cid = norm_id(v.get("contract_ref") or (f.get("contract_refs") or [None])[0]) or None
     contract = w.contracts.get(cid) if cid else None
+    if doc["ext"] == "eml" and not v.get("lines"):
+        return None  # an email that mentions an invoice is not a copy of it
     lines = []
     for i, ln in enumerate(v.get("lines") or []):
-        lines.append(Line(invoice=norm_id(number), idx=i, awb=norm_awb(ln.get("awb")) or None,
+        lines.append(Line(invoice=norm_id(number), idx=i, awb=_house_awb(ln),
                           pickup=to_date(ln.get("pickup_date")), description=ln.get("description") or "",
                           code=_norm_charge(contract, ln), lane=norm_lane(ln.get("lane")) or None, qty=ln.get("qty"),
                           unit=ln.get("unit"), base=ln.get("base"), rate=ln.get("rate"), amount=ln.get("amount"),
@@ -440,6 +442,16 @@ def _invoice(w: World, f: dict, doc: dict, email: dict | None) -> Invoice | None
                    credit_type=v.get("credit_type"), credit_period=v.get("credit_period"),
                    references=[norm_id(r) for r in v.get("references_invoices") or []], email_cite=email_cite,
                    scan=bool(doc.get("scan")), ocr_agreement=(doc.get("ocr") or {}).get("agreement"))
+
+
+def _house_awb(ln: dict) -> str | None:
+    """The line's own waybill. A printed house number ('<master>-H2') wins over the master the model may have given."""
+    awb = norm_awb(ln.get("awb")) or None
+    if awb:
+        m = re.search(re.escape(awb.split("-H")[0]) + r"-H\d+", str(ln.get("quote") or "").upper())
+        if m:
+            return m.group(0)
+    return awb
 
 
 def _notice(w: World, rn: dict, doc: dict, sender_email: str | None, sender_name: str | None) -> None:
