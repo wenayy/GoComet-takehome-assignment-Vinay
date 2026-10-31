@@ -10,7 +10,7 @@ make sheet                    # exam mailbox -> answer_sheet.json
 make eval                     # our eval set -> evals/results.json
 ```
 
-The harness reads documents with Claude (default model `claude-sonnet-5`, through the `anthropic` package already
+The harness reads documents with Claude (default model `claude-opus-5`, through the `anthropic` package already
 pinned). Everything else is plain Python with the pinned requirements; the scanned invoice is also read by the local
 OCR package (`rapidocr-onnxruntime`, already in the requirements) as a cross-check.
 
@@ -26,11 +26,32 @@ precedence), `checks.py` (the six classes), `report.py` (feedback, actions per m
 
 ## What works
 
-> PENDING: final practice card and eval results.
+- **Practice card: 99.6 / 100** (`report_card.txt`). 22 of 22 findings with quotes on their pages, 0 false, every
+  amount exact ($14,140.09 recovered, $0 wrongly disputed), 11 of 11 adaptation events, 3 of 3 learning checks, the
+  conflict and the missing document right, all 16 clean controls left alone, 24 of 24 actions right in each mode,
+  no hard gate. The 0.4 lost is confidence calibration (Brier 0.019; AUROC can't be measured with no wrong item).
+- **Exam sheet** (`answer_sheet.json`): every row where two models disagreed I checked by hand against the documents
+  (the notice-vs-amendment conflict on CDU-3051302 at [0.00, 61.93], CDU-3051266 at 244.37, the scanned INR advice
+  CDI-3031-0306 at 85.46). Claude Opus 5 and DeepSeek now produce identical sheets.
+- **Our evals: 18 of 18** (`evals/results.json`), 16 of them ours, built on a new carrier and customer with new
+  contract wording, a new invoice layout (DD/MM/YYYY, thousands separators, other column names and charge codes) and
+  the traps the brief lists: injection, unauthorised and quoted waivers, a one-off waiver that must not spread, the
+  $5,000 line in autonomous mode, expiry window edges, feedback scoped to one lane, a backdated variation.
+- **The same results on two different models.** Practice and evals score the same on Claude Opus 5 (the default) and
+  on DeepSeek, which is how I know the rules don't depend on one model's habits.
 
 ## What doesn't
 
-> PENDING.
+- **Margin step-down credits** aren't checked: the extractor reads the clause, but no check uses it yet.
+- **Claude Sonnet 5 is untested end to end** (its comparison run was cut short); the default is Opus 5, which is.
+- **Extraction is the risk.** Models sometimes skip a table or write a number their own way; each case I found is now
+  handled in code (one table per call with a re-ask, tolerant number parsing, waybills found from the line text), but a
+  new kind of omission on your set would show up as a missed or short finding, never as an invented one: every
+  amount is recomputed in Python from cited lines.
+- **Confidence is hand-weighted**, not fitted: every practice item was right, so there was nothing to fit it on.
+- Feedback kinds the practice set doesn't show (`override_amount`, `resolve_conflict`, `reject`) are implemented from
+  the glossary but have no eval of their own.
+- Retro detection relies on arrival dates across reports; the backdated eval checks the new amount, not the flag.
 
 ## The eval case that caught a bug
 
@@ -41,4 +62,8 @@ check never ran. The practice set could not have shown this, since every practic
 the extractor now records what each fee *is* (a category such as `dangerous_goods`), each contract's codes are
 mapped to those categories, and the checks use the category. The same contract's milestone export calls the pickup
 `COLLECTED_FROM_SHIPPER` and its invoices print the pickup date under "Collected"; both were missed, so the new-layout
-overcharge vanished. Both cases fail on commit `f1ad993^` and pass after it.
+overcharge vanished. Both cases fail on the code before commit `f1ad993` and pass after it.
+
+A second bug came from comparing models rather than from a case: replayed through Claude Opus 5, practice dropped to
+83.0 because Opus writes percentages as `"23.54%"` and my number parser rejected them, so no fuel line was ever
+repriced. Fixed in `a0f37af` (numbers parse however a model writes them); Opus now scores 99.6 like DeepSeek.

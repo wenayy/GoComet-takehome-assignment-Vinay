@@ -10,8 +10,8 @@ Each email and attachment is stored as pages of text from `grader/extract.py`, s
 against the grader's own text. One forced tool call per document returns a typed record: contract terms (rates per
 lane/band/period, fuel, FX, fees with a *category*, payment, rebate, Schedule 1, documents cited but not included),
 invoice lines, shipments, tracking events, payment rows and the instructions an email carries (author, quoted or
-not, AWB, charge, typed condition). Contracts are read in three focused calls (terms, rate tables, schedules); long
-spreadsheets by a column map plus Python. Facts are keyed by document hash under `--state-dir`; every fact keeps
+not, AWB, charge, typed condition). Contracts are read one table per call (terms, rates, fuel, FX, fees, Schedule 1),
+re-asked once if a table comes back empty; long spreadsheets by a column map plus Python. Facts are keyed by document hash under `--state-dir`; every fact keeps
 `doc`, `page` and its quote, snapped to a real line of the page. Scans are read by a vision model and cross-checked
 by local OCR. Charge codes are mapped to categories per contract, so the checks never depend on one carrier's names.
 
@@ -26,10 +26,10 @@ with the holder taken from Schedule 1.
 
 ## Confidence
 
-Start from the verdict and class (0.9 for a priced finding, lower for conflicts, cashback). Subtract for a pickup date
-not from tracking, a rate source without authority, a scanned invoice (more if the two OCR readings disagree), and
-thin evidence. Feedback-backed items stay high. On practice and our evals every reported item was right, so AUROC
-can't be measured yet; the Brier score on practice was 0.019.
+Start from the verdict and class (0.9 for a priced finding, lower for conflicts and cashback). Subtract for a pickup
+date not from tracking, a rate source without authority, a scanned invoice (more when the two OCR readings disagree)
+and thin evidence. Feedback-backed items stay high. On practice every reported item was right, so AUROC can't be
+measured there; the Brier score was 0.019.
 
 ## People in the loop
 
@@ -59,11 +59,18 @@ after the invoice is marked `retro`; keys that no longer hold (paid, expired) di
 
 ## Cost
 
-To be measured from logged token usage on the practice and exam replays (pending).
+Measured from logged token usage on real runs over the practice, exam and eval mailboxes: one call per email or
+attachment plus six per contract, about 1.2 calls per document, averaging about 8,800 input and 1,030 output tokens a
+call (most of the input is the extraction schema, sent every time). At list prices that is about **$83 per 1,000
+documents on Claude Opus 5** ($0.070 a call) and **$34 on Sonnet 5** ($0.029). Report time is pure Python and free.
+With 8 parallel workers, 1,000 documents take roughly 30-40 minutes (estimated from per-call latency). Prompt caching
+of the fixed schema and system prompt would cut input cost by about half; I left it out because I could not test it.
 
 ## What I'd do next
 
-- Margin step-down credits: the schema reads them, but the check isn't written yet.
-- Retro detection uses arrival dates; I'd like an eval with a backdated amendment to prove it.
-- Confidence is hand-weighted. With more labelled mistakes I'd fit it (logistic regression on the same signals).
-- A second extraction pass that re-reads any invoice whose lines don't add up to its printed total.
+- Margin step-down credits: the schema reads them, the check isn't written yet.
+- The extraction is the weak point: the model sometimes skips a table or writes numbers its own way. Every bug of that
+  kind was caught by comparing models and by our evals, then fixed in code (one table per call, tolerant number
+  parsing). I'd add an automatic check that invoice lines add up to the printed total, and re-read when they don't.
+- Prompt caching for the schema, and a fitted confidence model once there are labelled mistakes to fit.
+- Evals for feedback kinds the practice set doesn't show (`override_amount`, `resolve_conflict`, `reject`).

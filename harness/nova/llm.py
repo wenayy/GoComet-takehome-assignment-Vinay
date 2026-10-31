@@ -13,7 +13,7 @@ import time
 
 from .store import Store
 
-DEFAULT_MODEL = "claude-sonnet-5"
+DEFAULT_MODEL = "claude-opus-5"
 PROMPT_VERSION = "1"
 
 
