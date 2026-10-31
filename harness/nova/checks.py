@@ -143,7 +143,7 @@ _MONTHS = {m: i for i, m in enumerate(("jan", "feb", "mar", "apr", "may", "jun",
 
 
 def month_of(text) -> str | None:
-    """A service month however it's printed: 2034-11, 11/2034, Nov 2034, November 2034 -> '2034-11'."""
+    """A service month however it's printed: 2034-11, 11/2034, Nov 2034, Nov-2034, November 2034 -> '2034-11'."""
     t = str(text or "").strip().lower()
     m = re.search(r"(\d{4})-(\d{1,2})\b", t) or None
     if m:
@@ -151,7 +151,7 @@ def month_of(text) -> str | None:
     m = re.search(r"\b(\d{1,2})/(\d{4})\b", t)
     if m:
         return f"{m.group(2)}-{int(m.group(1)):02d}"
-    m = re.search(r"\b([a-z]{3})[a-z]*\.?\s+(\d{4})\b", t)
+    m = re.search(r"\b([a-z]{3})[a-z]*\.?[\s-]+(\d{4})\b", t)
     if m and m.group(1) in _MONTHS:
         return f"{m.group(2)}-{_MONTHS[m.group(1)]:02d}"
     return None

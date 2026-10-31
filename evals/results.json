@@ -1,8 +1,8 @@
 {
  "harness": "harness/harness.py",
- "passed": 25,
- "total": 25,
- "your_cases": 23,
+ "passed": 26,
+ "total": 26,
+ "your_cases": 24,
  "score": 1.0,
  "cases": [
   {
@@ -98,6 +98,12 @@
   {
    "case": "sample_overcharge.yaml",
    "name": "wrong rate on one freight line",
+   "pass": true,
+   "diff": []
+  },
+  {
+   "case": "screening_correctly_billed_no_overcharge.yaml",
+   "name": "screening correctly billed, no overcharge",
    "pass": true,
    "diff": []
   },

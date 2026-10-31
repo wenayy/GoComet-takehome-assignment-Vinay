@@ -1,0 +1,12 @@
+name: screening correctly billed, no overcharge
+mailbox: evals/mailboxes/waiver_partly_credited
+as_of: '2041-07-31'
+mode: supervised
+expect:
+  key:
+    invoice_id: HCA-41-0020
+    class: overcharge
+  verdict: no_finding
+why: 'decoy next to the waiver: 120 kg x 0.15 = 18.00 screening is exactly the Appendix 3 rate, and the delivery fee
+  is the 90.00 fee for a consignment the carrier delivered; the waiver and its credit are a waived_but_billed matter,
+  not an overcharge'

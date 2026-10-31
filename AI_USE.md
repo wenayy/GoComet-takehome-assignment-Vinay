@@ -142,3 +142,9 @@ committing it before moving on.
 11. > use @graphify as well for the better things so i can save mymore tokens always use the relevant skills we have
 
     *Mapped `harness/` into a code graph (structural, no model tokens), refreshed after each change.*
+
+12. > u write that and writein what i write with ai things like that
+
+    *Written by Claude Code at my request (not by me): `month_of()` now also reads months printed as `Dec-2034`, and a
+    decoy eval, `screening_correctly_billed_no_overcharge`, checks that a correctly billed screening charge next to a
+    waived, partly credited fee is not flagged as an overcharge. 26 of 26 evals pass.*
