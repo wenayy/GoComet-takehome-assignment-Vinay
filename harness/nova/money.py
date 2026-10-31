@@ -2,19 +2,29 @@
 from __future__ import annotations
 
 import math
+import re
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 CENT = Decimal("0.01")
 
 
+_NUM = re.compile(r"-?\d+(?:\.\d+)?")
+
+
 def D(x) -> Decimal | None:
-    if x is None or x == "":
+    """A number however a model wrote it: 23.54, "23.54", "23.54%", "USD 1,234.50", "INR 90,535.08"."""
+    if x is None or x == "" or isinstance(x, bool):
         return None
     if isinstance(x, Decimal):
         return x
+    if isinstance(x, (int, float)):
+        return Decimal(str(x))
+    m = _NUM.search(str(x).replace(",", ""))
+    if not m:
+        return None
     try:
-        return Decimal(str(x).replace(",", "").strip())
+        return Decimal(m.group(0))
     except InvalidOperation:
         return None
 

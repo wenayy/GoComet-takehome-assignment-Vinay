@@ -487,12 +487,25 @@ def _house_awb(ln: dict) -> str | None:
     return awb
 
 
+def _notice_contract(w: World, rn: dict, doc: dict, lane: str) -> Contract | None:
+    """The contract a rate notice changes: as stated, else the one its reference or text names, else the only contract
+    that prices the lane. A mailbox can hold several contracts, so never just 'the first one'."""
+    k = w.contracts.get(norm_id(rn.get("contract_id")))
+    if k:
+        return k
+    text = norm_id(" ".join([str(rn.get("reference") or "")] + (doc.get("pages") or [])))
+    named = [c for cid, c in w.contracts.items() if cid in text]
+    if len(named) == 1:
+        return named[0]
+    pricing = {r.contract for r in w.rate_rows if r.lane == lane and r.source in ("msa", "amendment")}
+    if len(pricing) == 1:
+        return w.contracts[pricing.pop()]
+    return None
+
+
 def _notice(w: World, rn: dict, doc: dict, sender_email: str | None, sender_name: str | None) -> None:
-    cid = norm_id(rn.get("contract_id"))
     lane = norm_lane(rn.get("lane"))
-    k = w.contracts.get(cid)
-    if k is None and len(w.contracts) == 1:
-        k = next(iter(w.contracts.values()))
+    k = _notice_contract(w, rn, doc, lane)
     if k is None or not lane:
         return
     who = k.is_authorised("rates", sender_email, sender_name)
