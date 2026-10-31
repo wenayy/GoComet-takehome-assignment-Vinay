@@ -423,30 +423,39 @@ def _rapidocr(png: bytes) -> str:
 
 # ---- contracts, read section by section -------------------------------------------------------------------------------
 _CP = CONTRACT["properties"]
-CONTRACT_SECTIONS = {
-    "record_contract_terms": (
-        "Record the contract's identity, term, payment, rebate and credit terms, the documents it cites but does not "
-        "include, and one-line quotes of its key clauses.",
-        [k for k in _CP if k not in ("rate_periods", "rates", "fuel", "accessorials", "charge_labels", "fx",
-                                     "schedule1")]),
-    "record_rate_tables": (
-        "Record every rate row this document sets, in every rate table (Annex A, or a table in an amendment or "
-        "schedule that replaces rates). One entry per lane, weight band and period: a row with P1 and P2 columns is two "
-        "entries. Minimum charges are rows too. Leave rates empty only if the document sets no rates.",
-        ["contract_id", "rate_periods", "rates"]),
-    "record_schedules": (
-        "Record the fuel surcharge table, the exchange-rate table, the accessorial fees, the charge-code labels and "
-        "Schedule 1 (every authorised person, with party code and categories). Leave a list empty if the document "
-        "doesn't have it.",
-        ["contract_id", "fuel", "fx", "accessorials", "charge_labels", "schedule1"]),
-}
+_TABLES = ("rate_periods", "rates", "fuel", "fx", "accessorials", "charge_labels", "schedule1")
+# (tool, task, fields, the list that must not come back empty if the document has that table)
+CONTRACT_SECTIONS = [
+    ("record_contract_terms",
+     "Record the contract's identity, term, payment, rebate and credit terms, the documents it cites but does not "
+     "include, and one-line quotes of its key clauses.", [k for k in _CP if k not in _TABLES], None),
+    ("record_rate_tables",
+     "Record every rate row this document sets, in every rate table (Annex A, or a table in an amendment or schedule "
+     "that replaces rates). One entry per lane, weight band and period: a row with P1 and P2 columns is two entries. "
+     "Minimum charges are rows too.", ["contract_id", "rate_periods", "rates"], "rates"),
+    ("record_fuel_table",
+     "Record every row of the fuel surcharge table (one entry per month).", ["contract_id", "fuel"], "fuel"),
+    ("record_exchange_rates",
+     "Record every row of the exchange-rate table (one entry per month).", ["contract_id", "fx"], "fx"),
+    ("record_fees_and_labels",
+     "Record every accessorial fee (code, name, what it is, amount, basis) and every charge-code label line.",
+     ["contract_id", "accessorials", "charge_labels"], "accessorials"),
+    ("record_authorised_persons",
+     "Record every authorised person in Schedule 1 (name, title, party code, categories, email).",
+     ["contract_id", "schedule1"], "schedule1"),
+]
+RETRY = ("Re-read the whole document carefully: if it contains this table at all, every row of it must be recorded. "
+         "Leave the list empty only if the document really has no such table.")
 
 
 def _read_contract(store, doc: dict, text: str) -> dict:
     merged: dict = {}
-    for tool, (task, keys) in CONTRACT_SECTIONS.items():
+    for tool, task, keys, must in CONTRACT_SECTIONS:
         schema = obj({k: _CP[k] for k in keys})
         part = call_tool(store, system=SYSTEM, tool_name=tool, schema=schema, content=f"{task}\n\n{text}")
+        if must and not part.get(must):
+            part = call_tool(store, system=SYSTEM, tool_name=tool, schema=schema,
+                             content=f"{task} {RETRY}\n\n{text}", cache_tag="retry")
         for k, v in part.items():
             if v not in (None, [], {}) or k not in merged:
                 merged[k] = v
