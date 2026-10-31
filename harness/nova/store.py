@@ -76,8 +76,24 @@ class Store:
         self._write(f"reports_{mode}.json", items)
 
     # ---- llm cache ---------------------------------------------------------------------------------------------------
+    # NOVA_CACHE_DIR (local runs only, set in .env) shares answers across state dirs, so replaying the mailbox in both
+    # modes or re-running the grader doesn't pay for the same document twice. The grader never sets it.
+    def _shared(self, key: str) -> Path | None:
+        d = os.environ.get("NOVA_CACHE_DIR")
+        return Path(d) / f"{key}.json" if d else None
+
     def cache_get(self, key: str):
-        return self._read(f"llm_cache/{key}.json", None)
+        hit = self._read(f"llm_cache/{key}.json", None)
+        shared = self._shared(key)
+        if hit is None and shared is not None and shared.is_file():
+            hit = json.loads(shared.read_text())
+        return hit
 
     def cache_put(self, key: str, value) -> None:
         self._write(f"llm_cache/{key}.json", value)
+        shared = self._shared(key)
+        if shared is not None:
+            shared.parent.mkdir(parents=True, exist_ok=True)
+            tmp = shared.with_suffix(f".{os.getpid()}.tmp")
+            tmp.write_text(json.dumps(value))
+            os.replace(tmp, shared)
