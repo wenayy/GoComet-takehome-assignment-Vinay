@@ -353,22 +353,45 @@ def _read_table(store, doc: dict, email: dict | None) -> dict:
 OCR_SCHEMA = obj({"pages": arr(obj({"lines": arr(S)}))}, ["pages"])
 
 
-def ocr_pages(store, raw: bytes) -> list[str]:
-    """Text of an image-only PDF: a vision model first, the local OCR package if there's no model to call."""
+_NUM = re.compile(r"\d[\d,]*\.\d{2}\b")
+
+
+def _numbers(text: str) -> list[str]:
+    return [n.replace(",", "") for n in _NUM.findall(text)]
+
+
+def ocr_pages(store, raw: bytes) -> tuple[list[str], dict]:
+    """Text of an image-only PDF, read twice: a vision model and the local OCR package.
+
+    The vision transcription is the text we use (it keeps lines and spacing). The local OCR is an independent second
+    reading: every money amount the model read must also appear in it. Disagreement doesn't change the text, it lowers
+    confidence and keeps the finding away from unattended actions. With no model to call, the local OCR is the text.
+    """
     import pymupdf
     pngs = []
     with pymupdf.open(stream=raw, filetype="pdf") as pdf:
         for p in pdf:
             pngs.append(p.get_pixmap(dpi=200).tobytes("png"))
+    local = []
+    for png in pngs:
+        try:
+            local.append(_rapidocr(png))
+        except Exception:
+            local.append("")
     try:
         content = [image_block(png) for png in pngs] + [{"type": "text", "text": (
             "Transcribe these scanned pages line by line, one entry per printed line, left to right, keeping every "
             "number, date and code exactly as printed. One pages[] entry per image.")}]
         out = call_tool(store, system="You transcribe scanned business documents exactly.", content=content,
                         tool_name="transcription", schema=OCR_SCHEMA, max_tokens=8000)
-        return ["\n".join(p.get("lines", [])) for p in out["pages"]]
-    except Exception:
-        return [_rapidocr(png) for png in pngs]
+        vision = ["\n".join(p.get("lines", [])) for p in out["pages"]]
+    except Exception as e:
+        return local, {"engine": "rapidocr", "agreement": None, "note": f"vision unavailable: {e}"}
+    seen = set(_numbers(" ".join(local)))
+    read = _numbers(" ".join(vision))
+    unmatched = sorted({n for n in read if n not in seen})
+    agreement = round(1 - len(unmatched) / len(set(read)), 3) if read and any(local) else None
+    return vision, {"engine": "vision+rapidocr", "agreement": agreement, "unmatched": unmatched}
 
 
 def _rapidocr(png: bytes) -> str:

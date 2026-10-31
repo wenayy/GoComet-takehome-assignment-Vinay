@@ -191,6 +191,7 @@ class Invoice:
     references: list = field(default_factory=list)
     email_cite: Cite | None = None
     scan: bool = False
+    ocr_agreement: float | None = None   # share of the scan's amounts the second OCR reading confirms
 
 
 @dataclass
@@ -438,7 +439,7 @@ def _invoice(w: World, f: dict, doc: dict, email: dict | None) -> Invoice | None
                    is_copy=bool(v.get("is_copy")), requests_payment=v.get("requests_payment") is not False,
                    credit_type=v.get("credit_type"), credit_period=v.get("credit_period"),
                    references=[norm_id(r) for r in v.get("references_invoices") or []], email_cite=email_cite,
-                   scan=bool(doc.get("scan")))
+                   scan=bool(doc.get("scan")), ocr_agreement=(doc.get("ocr") or {}).get("agreement"))
 
 
 def _notice(w: World, rn: dict, doc: dict, sender_email: str | None, sender_name: str | None) -> None:

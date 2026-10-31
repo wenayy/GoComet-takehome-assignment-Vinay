@@ -24,7 +24,7 @@ def ingest_batch(batch_dir: str, state_dir: str) -> None:
             return ref, None
         try:
             if doc["scan"]:
-                doc["pages"] = ocr_pages(store, raws[ref])
+                doc["pages"], doc["ocr"] = ocr_pages(store, raws[ref])
             email = docs.get(doc["email_ref"])
             return ref, read_facts(store, doc, email)
         except Exception as e:  # one unreadable document must not stop the batch

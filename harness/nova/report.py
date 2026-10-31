@@ -132,7 +132,8 @@ def confidence(it: Item, conflicts: set) -> float:
     if "rate source lacks authority" in it.weak:
         c -= 0.15
     if it.invoice is not None and it.invoice.scan:
-        c -= 0.1
+        agree = it.invoice.ocr_agreement
+        c -= 0.08 if agree is not None and agree >= 0.98 else 0.2
     if len([e for e in it.evidence if e.ev()]) < 2:
         c -= 0.1
     if it.learned:
