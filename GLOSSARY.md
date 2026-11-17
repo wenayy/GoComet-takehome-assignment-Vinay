@@ -1,7 +1,7 @@
 # Glossary
 
-Every word the grader relies on, and every rule it checks. When the brief and this file seem to disagree, this file
-wins. The worked examples in `data/examples/` show each rule on real documents.
+Every term the harness and grader rely on, and every rule they check. This file is the source of truth for the
+domain rules. The worked examples in `data/examples/` show each rule on real documents.
 
 ## The report, in one breath
 
