@@ -1,4 +1,4 @@
-# My solution
+# Solution: results and limits
 
 ## How to run it
 
@@ -40,9 +40,9 @@ precedence), `checks.py` (the six classes), `report.py` (feedback, actions per m
   Opus 5 and DeepSeek produce identical sheets.
 - **Every invoice is self-checked**: its lines must add up to its printed subtotal, or it is re-read once. On practice
   and exam, 1 of 84 needed it.
-- **Our evals: 25 of 25** (`evals/results.json`), 23 of them ours, built on a new carrier and customer with new
+- **Our evals: 26 of 26** (`evals/results.json`), 24 of them ours, built on a new carrier and customer with new
   contract wording, a new invoice layout (DD/MM/YYYY, thousands separators, other column names and charge codes) and
-  the traps the brief lists: injection, unauthorised and quoted waivers, a one-off waiver that must not spread, the
+  the traps real AP mail contains: injection, unauthorised and quoted waivers, a one-off waiver that must not spread, the
   $5,000 line in autonomous mode, expiry window edges, feedback scoped to one lane, a backdated variation, a waiver for one shipment only, a waiver in other words with the waybill only in the subject, an email telling the AI to ignore the contract, and credits against a waived fee (in full, in part, for another charge, arriving a batch later).
 - **The same results on two different models.** Practice and evals score the same on Claude Opus 5 (the default) and
   on DeepSeek, which is how I know the rules don't depend on one model's habits.

@@ -1,17 +1,16 @@
-# Nova take-home. `make help` lists the targets.
+# Nova. `make help` lists the targets.
 # Every target runs in .venv (made by `make setup`). HARNESS points at your harness; MODE is supervised, autonomous
 # or both (the default for make grade).
 PY      ?= .venv/bin/python
 HARNESS ?= harness/harness.py
 MODE    ?= both
 
-.PHONY: help setup venv run grade sheet eval validate clean
+.PHONY: help setup venv run grade sheet eval clean
 help:
 	@echo "make setup      create .venv and install harness/requirements.txt"
 	@echo "make grade      replay the practice mailbox through your harness; writes report_card.txt and .json"
 	@echo "make sheet      run the exam mailbox; writes out/exam_report.json and answer_sheet.json"
 	@echo "make eval       run your cases in evals/cases (K=<text> runs only matching files)"
-	@echo "make validate   check the repo is ready to send (SUBMISSION.md)"
 	@echo "make run        run the practice mailbox once; writes out/practice_report.json"
 
 setup:
@@ -21,7 +20,7 @@ setup:
 		python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))' || { echo "need Python 3.11 or newer"; exit 2; }; \
 		python3 -m venv .venv && .venv/bin/pip install -q -r harness/requirements.txt; \
 	fi
-	@$(PY) -c "import pymupdf, openpyxl, jsonschema, yaml" && echo "setup done. Next: write harness/harness.py, then make grade"
+	@$(PY) -c "import pymupdf, openpyxl, jsonschema, yaml" && echo "setup done. Next: make grade"
 
 venv:
 	@test -x "$(PY)" || command -v "$(PY)" >/dev/null 2>&1 || { echo "no $(PY) yet: run make setup first"; exit 2; }
@@ -38,9 +37,6 @@ sheet: venv
 
 eval: venv
 	$(PY) evals/run_evals.py --harness $(HARNESS) $(if $(K),-k $(K),)
-
-validate: venv
-	@$(PY) tools/check_submission.py --harness $(HARNESS)
 
 clean:
 	rm -rf out/state_* .state

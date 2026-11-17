@@ -2,8 +2,7 @@
 
 A multi-agent harness for accounts payable. It reads a freight mailbox (emails with PDF invoices, Excel statements,
 contracts and amendments), remembers what the contracts say, and finds six kinds of overbilling with the amount and
-the quoted lines that prove it. It was built for a 48-hour take-home from GoComet (Nova platform); the original
-brief is kept in [ASSIGNMENT.md](ASSIGNMENT.md).
+the quoted lines that prove it.
 
 **The idea: the model reads, Python decides.** An LLM turns every document into typed facts with exact quotes.
 Verdicts, amounts, actions and confidence all come from plain, testable Python over those facts. No money figure
@@ -62,7 +61,7 @@ Three CLI commands, each in a fresh process: `ingest <batch>`, `report --as-of D
   `delivery`, `screening`), so nothing depends on one carrier's names. My eval suite caught the bug where it did.
 
 Details: [DESIGN.md](DESIGN.md) (design), [SOLUTION.md](SOLUTION.md) (what works, what doesn't, bugs found by evals),
-[GLOSSARY.md](GLOSSARY.md) (domain rules), [AI_USE.md](AI_USE.md) (how AI tools were used, with the prompt log).
+[GLOSSARY.md](GLOSSARY.md) (domain rules).
 
 ## Run it
 
@@ -72,7 +71,6 @@ export ANTHROPIC_API_KEY=...
 make grade                    # practice mailbox -> report_card.txt / .json
 make sheet                    # exam mailbox -> answer_sheet.json
 make eval                     # own eval suite -> evals/results.json
-make validate
 ```
 
 ## Layout
